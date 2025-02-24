@@ -1,0 +1,6 @@
+firebase_admin
+pandas
+datetime
+numpy
+geopy
+scikit-learn
