@@ -3,7 +3,6 @@ from firebase_admin import credentials, db
 import pandas as pd
 from datetime import datetime
 import numpy as np
-from geopy.distance import geodesic
 from sklearn.cluster import DBSCAN
 
 # Initialize Firebase
