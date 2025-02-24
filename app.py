@@ -4,12 +4,22 @@ import pandas as pd
 from datetime import datetime
 import numpy as np
 from sklearn.cluster import DBSCAN
+from dotenv import load_dotenv
+import os
+# Load environment variables from .env file
+load_dotenv()
+
+# Read Firebase credentials and database URL from environment variables
+firebase_credentials_path = os.getenv("FIREBASE_CREDENTIALS")
+firebase_database_url = os.getenv("FIREBASE_DATABASE_URL")
 
 # Initialize Firebase
-cred = credentials.Certificate("deleted-project-6d75e-firebase-adminsdk-avwl1-78b2ae6fd1.json")
+cred = credentials.Certificate(firebase_credentials_path)
 firebase_admin.initialize_app(cred, {
-    'databaseURL': 'https://deleted-project-6d75e-default-rtdb.asia-southeast1.firebasedatabase.app/'
+    'databaseURL': firebase_database_url
 })
+
+print("✅ Firebase initialized successfully!")
 
 # Fetch Data from Firebase
 def fetch_data():
