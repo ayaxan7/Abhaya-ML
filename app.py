@@ -12,20 +12,25 @@ from sklearn.cluster import DBSCAN
 
 # Load Firebase Credentials from .env
 from dotenv import load_dotenv
+# Load environment variables
 load_dotenv()
 
-firebase_credentials_path = os.getenv("FIREBASE_CREDENTIALS")
-firebase_db_url = os.getenv("FIREBASE_DB_URL")
+# Read the JSON file
+firebase_credentials_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
+with open(firebase_credentials_path, "r") as f:
+    firebase_credentials = json.load(f)
 
+print(firebase_credentials["project_id"])  # Verify
 # Initialize Firebase
-cred = credentials.Certificate(json.loads(firebase_credentials_path))
-firebase_admin.initialize_app(cred, {'databaseURL': firebase_db_url})
-
+cred = credentials.Certificate(firebase_credentials)
+firebase_admin.initialize_app(cred, {
+    'databaseURL': os.getenv("FIREBASE_DB_URL")
+})
 # Flask App
 app = Flask(__name__)
 
 def fetch_data():
-    ref = db.reference('/data')
+    ref = db.reference('data')
     data = ref.get()
     records = []
 
