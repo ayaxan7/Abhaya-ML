@@ -1,7 +1,13 @@
 services:
-  - type: worker
-    name: crime-zone-worker
+  - type: web
+    name: abhaya-ml
+    runtime: python
     env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn -w 1 -b 0.0.0.0:5000 app:app"
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: python app.py
+    envVars:
+      - key: FIREBASE_CREDENTIALS
+        sync: false
+      - key: FIREBASE_DB_URL
+        sync: false

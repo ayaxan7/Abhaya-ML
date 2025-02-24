@@ -1,29 +1,31 @@
+import os
+import json
+import threading
+import time
+from flask import Flask, render_template
 import firebase_admin
 from firebase_admin import credentials, db
 import pandas as pd
-from datetime import datetime
 import numpy as np
+from datetime import datetime
 from sklearn.cluster import DBSCAN
+
+# Load Firebase Credentials from .env
 from dotenv import load_dotenv
-import os
-# Load environment variables from .env file
 load_dotenv()
 
-# Read Firebase credentials and database URL from environment variables
 firebase_credentials_path = os.getenv("FIREBASE_CREDENTIALS")
-firebase_database_url = os.getenv("FIREBASE_DATABASE_URL")
+firebase_db_url = os.getenv("FIREBASE_DB_URL")
 
 # Initialize Firebase
-cred = credentials.Certificate(firebase_credentials_path)
-firebase_admin.initialize_app(cred, {
-    'databaseURL': firebase_database_url
-})
+cred = credentials.Certificate(json.loads(firebase_credentials_path))
+firebase_admin.initialize_app(cred, {'databaseURL': firebase_db_url})
 
-print("✅ Firebase initialized successfully!")
+# Flask App
+app = Flask(__name__)
 
-# Fetch Data from Firebase
 def fetch_data():
-    ref = db.reference('/data')  
+    ref = db.reference('/data')
     data = ref.get()
     records = []
 
@@ -36,17 +38,15 @@ def fetch_data():
 
     return pd.DataFrame(records)
 
-# Convert Timestamp to Features
 def process_time(df):
     def parse_timestamp(timestamp_str):
-        # Ensure timestamp is a string
         if not isinstance(timestamp_str, str):
             timestamp_str = str(timestamp_str)
 
         try:
             dt = datetime.strptime(timestamp_str, "%a %b %d %H:%M:%S GMT%z %Y")
         except ValueError:
-            return pd.Series({'hour': None, 'day_of_week': None, 'weekend': None})  # Handle invalid timestamps
+            return pd.Series({'hour': None, 'day_of_week': None, 'weekend': None})
         
         return pd.Series({
             'hour': dt.hour,
@@ -58,27 +58,33 @@ def process_time(df):
     df = pd.concat([df, time_features], axis=1)
     return df.drop(columns=['timestamp'])
 
-# Crime Zone Clustering using DBSCAN
 def crime_zone_clustering(df):
     coords = df[['latitude', 'longitude']].values
     clustering = DBSCAN(eps=0.001, min_samples=3, metric='haversine').fit(np.radians(coords))
     df['crime_zone'] = clustering.labels_
     
-    # Map cluster labels to categories
     df['zone_category'] = df['crime_zone'].apply(lambda x: 'High' if x != -1 else 'Low')
     return df
 
-# Real-Time Execution
-def main():
-    df = fetch_data()
-    df = process_time(df)
-    df = crime_zone_clustering(df)
+def run_ml_model():
+    while True:
+        print("Running ML Model...")
+        df = fetch_data()
+        df = process_time(df)
+        df = crime_zone_clustering(df)
+        df.to_csv("crime_zone_output.csv", index=False)
+        print("Output saved.")
 
-    # Save to CSV
-    df.to_csv("crime_zone_output.csv", index=False)
+        # Sleep for 1 hour
+        time.sleep(3600)
 
-    print("Output saved to crime_zone_output.csv")
-    print(df[['latitude', 'longitude', 'zone_category']])  # Display categorized zones
+# Start ML Model in Background
+threading.Thread(target=run_ml_model, daemon=True).start()
+
+@app.route("/")
+def home():
+    df = pd.read_csv("crime_zone_output.csv")
+    return render_template("index.html", tables=[df.to_html()], titles=df.columns.values)
 
 if __name__ == "__main__":
-    main()
+    app.run(host="0.0.0.0", port=5000)

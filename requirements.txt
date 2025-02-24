@@ -1,8 +1,6 @@
-firebase_admin
+flask
+firebase-admin
 pandas
-datetime
 numpy
-geopy
 scikit-learn
-os
-json
+gunicorn
