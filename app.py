@@ -95,7 +95,7 @@ def crime_zone_clustering(df):
         df['zone_category'] = 'Low'
         return df
 
-    clustering = DBSCAN(eps=0.001, min_samples=3, metric='haversine').fit(np.radians(coords))
+    clustering = DBSCAN(eps=0.0005, min_samples=3, metric='haversine').fit(np.radians(coords))
     df['crime_zone'] = clustering.labels_
     df['zone_category'] = df['crime_zone'].apply(lambda x: 'High' if x != -1 else 'Low')
 
