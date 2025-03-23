@@ -25,7 +25,7 @@ with open(firebase_credentials_path, "r") as f:
 cred = credentials.Certificate(firebase_credentials)
 firebase_admin.initialize_app(cred, {'databaseURL': firebase_db_url})
 
-# Flask App
+# Flask Server
 app = Flask(__name__)
 
 def fetch_data():
